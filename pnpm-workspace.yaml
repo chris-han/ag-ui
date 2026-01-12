@@ -1,15 +1,15 @@
 packages:
-  - apps/*
-  - middlewares/*
-  - sdks/typescript/packages/*
-  - integrations/*/typescript
-  - integrations/community/*/typescript
-  - integrations/mastra/typescript/examples
+  - "apps/*"
+  - "middlewares/*"
+  - "sdks/typescript/packages/*"
+  - "integrations/*/typescript"
+  - "integrations/community/*/typescript"
+  - "integrations/mastra/typescript/examples"
 
 ignoredBuiltDependencies:
-  - '@scarf/scarf'
-  - '@tailwindcss/oxide'
-  - esbuild
-  - protobufjs
-  - sharp
-  - unrs-resolver
+  - "@scarf/scarf"
+  - "@tailwindcss/oxide"
+  - "esbuild"
+  - "protobufjs"
+  - "sharp"
+  - "unrs-resolver"
