@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **FIXED**: Text message events not emitted when non-streaming response includes client function call (issue #906)
+  - In non-streaming mode, when an ADK event contained both text and an LRO (long-running) tool call, text was skipped entirely
+  - Added `translate_text_only()` method to EventTranslator to handle text extraction for LRO events
+  - Modified LRO routing in ADKAgent to emit TEXT_MESSAGE events before TOOL_CALL events
+- **FIXED**: `adk_events_to_messages()` not converting assistant messages from DatabaseSessionService (issue #905)
+  - ADK agents set `author` to the agent's name (e.g., "my_agent"), not "model"
+  - Previous check for `author == "model"` caused assistant messages to be silently dropped
+  - Now treats any non-"user" author as an assistant message
+
+## [0.4.1] - 2025-01-06
+
+### Added
+- **NEW**: Multimodal message support for user messages with inline base64-encoded binary data (#864)
+  - `convert_message_content_to_parts()` function converts AG-UI `TextInputContent` and `BinaryInputContent` to ADK `types.Part` objects
+  - Supports `image/png`, `image/jpeg`, and other MIME types via `inline_data` with base64-decoded bytes
+  - Gracefully ignores unsupported binary content (URL-only, id-only references) with warnings
+  - Invalid base64 data is logged and skipped without crashing
+- **NEW**: Integration tests for multimodal input handling (`test_from_app_with_valid_mime_type`, `test_from_app_with_unsupported_mime_type`)
+- **NEW**: Unit tests for multimodal content conversion in `test_utils_converters.py`
+- **NEW**: `ADKAgent.from_app()` classmethod for creating agents from ADK App instances (#844)
+  - Enables access to App-level features: plugins, resumability, context caching, events compaction
+  - Creates per-request App copies with modified agents using `model_copy()` to preserve all configs
+  - Includes `plugin_close_timeout` parameter (requires ADK 1.19+, silently ignored on older versions)
+  - Runtime detection of ADK version capabilities for forward compatibility
+- **NEW**: Integration tests for `from_app()` functionality (`test_from_app_integration.py`)
+- **DOCUMENTATION**: Added "Using App for Full ADK Features" section to USAGE.md
+
+### Changed
+- **IMPROVED**: Message content conversion now uses `convert_message_content_to_parts()` for multimodal support in `_convert_latest_user_message()` and `convert_ag_ui_messages_to_adk()`
+
+### Fixed
+- **FIXED**: Thread ID to Session ID mapping for VertexAI session services (#870)
+  - AG-UI `thread_id` is now transparently mapped to ADK `session_id` (which may differ, e.g., VertexAI generates numeric IDs)
+  - Backend session IDs never leak to frontend AG-UI events - all events use the original `thread_id`
+  - Session state stores metadata (`_ag_ui_thread_id`, `_ag_ui_app_name`, `_ag_ui_user_id`) for recovery after middleware restarts
+  - `/agents/state` endpoint now accepts optional `appName` and `userId` parameters for explicit session lookup
+  - Processed message tracking now uses `thread_id` as key for consistency
+
 ## [0.4.0] - 2025-12-14
 
 ### Added
