@@ -732,41 +732,45 @@ class LangGraphAgent:
                     )
                 return
 
-            if not self.active_run["has_function_streaming"]:
-                yield self._dispatch_event(
-                    ToolCallStartEvent(
-                        type=EventType.TOOL_CALL_START,
-                        tool_call_id=tool_call_output.tool_call_id,
-                        tool_call_name=tool_call_output.name,
-                        parent_message_id=tool_call_output.id,
-                        raw_event=event,
+            # Handle ToolMessage objects
+            if isinstance(tool_call_output, ToolMessage):
+                if not self.active_run["has_function_streaming"]:
+                    yield self._dispatch_event(
+                        ToolCallStartEvent(
+                            type=EventType.TOOL_CALL_START,
+                            tool_call_id=tool_call_output.tool_call_id,
+                            tool_call_name=tool_call_output.name,
+                            parent_message_id=tool_call_output.id,
+                            raw_event=event,
+                        )
                     )
-                )
-                yield self._dispatch_event(
-                    ToolCallArgsEvent(
-                        type=EventType.TOOL_CALL_ARGS,
-                        tool_call_id=tool_call_output.tool_call_id,
-                        delta=dump_json_safe(event["data"]["input"]),
-                        raw_event=event
+                    yield self._dispatch_event(
+                        ToolCallArgsEvent(
+                            type=EventType.TOOL_CALL_ARGS,
+                            tool_call_id=tool_call_output.tool_call_id,
+                            delta=dump_json_safe(event["data"]["input"]),
+                            raw_event=event
+                        )
                     )
-                )
-                yield self._dispatch_event(
-                    ToolCallEndEvent(
-                        type=EventType.TOOL_CALL_END,
-                        tool_call_id=tool_call_output.tool_call_id,
-                        raw_event=event
+                    yield self._dispatch_event(
+                        ToolCallEndEvent(
+                            type=EventType.TOOL_CALL_END,
+                            tool_call_id=tool_call_output.tool_call_id,
+                            raw_event=event
+                        )
                     )
-                )
 
-            yield self._dispatch_event(
-                ToolCallResultEvent(
-                    type=EventType.TOOL_CALL_RESULT,
-                    tool_call_id=tool_call_output.tool_call_id,
-                    message_id=str(uuid.uuid4()),
-                    content=dump_json_safe(tool_call_output.content),
-                    role="tool"
+                yield self._dispatch_event(
+                    ToolCallResultEvent(
+                        type=EventType.TOOL_CALL_RESULT,
+                        tool_call_id=tool_call_output.tool_call_id,
+                        message_id=str(uuid.uuid4()),
+                        content=dump_json_safe(tool_call_output.content),
+                        role="tool"
+                    )
                 )
-            )
+            # Skip tool call events for non-ToolMessage outputs (plain dicts, strings, etc.)
+            # These are typically intermediate tool returns that don't need UI events
 
     def handle_thinking_event(self, reasoning_data: LangGraphReasoning) -> Generator[str, Any, str | None]:
         if not reasoning_data or "type" not in reasoning_data or "text" not in reasoning_data:
